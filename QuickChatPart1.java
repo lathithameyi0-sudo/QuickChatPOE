@@ -1,33 +1,78 @@
-import java.util.Scanner;
+import javax.swing.JOptionPane;
+import java.util.ArrayList;
+
 public class QuickChatPart1 {
-public static void main(String[] args) {
-Scanner input = new Scanner(System.in);
-System.out.println("=================================");
-System.out.println(" Welcome to QuickChat");
-System.out.println("=================================");
-System.out.print("Enter your first name: ");
-String firstName = input.nextLine();
+    public static void main(String[] args) {
+        ArrayList<Message> sentMessages = new ArrayList<>();
+        ArrayList<String> disregarded = new ArrayList<>();
+        ArrayList<String> stored = new ArrayList<>();
+        ArrayList<String> messageHashes = new ArrayList<>();
+        ArrayList<String> messageIDs = new ArrayList<>();
 
-System.out.print("Enter your last name: ");
-String lastName = input.nextLine();
+        // --- PART 1 LOGIN (keep working) ---
+        Login login = new Login("Lathitha", "Meyi");
+        String reg = login.registerUser("kyl_1", "Ch&&sec@ke99!", "+27718693002");
+        JOptionPane.showMessageDialog(null, reg);
+        if (!reg.equals("User registered successfully.")) return;
 
-Login user = new Login(firstName, lastName);
-System.out.print("Create a username (must have _ and <=5 chars): ");
-String username = input.nextLine();
-System.out.print("Create a password (8 chars, Caps, number, special): ");
-String password = input.nextLine();
-System.out.print("Enter your South African cell number (+27...): ");
-String cellPhoneNumber = input.nextLine();
-String registrationMessage = user.registerUser(username, password, cellPhoneNumber);
-System.out.println("\n" + registrationMessage);
-if (registrationMessage.equals("User registered successfully.")) {
-System.out.println("\n---------- Login ----------");
-System.out.print("Enter username: ");
-String loginUsername = input.nextLine();
-System.out.print("Enter password: ");
-String loginPassword = input.nextLine();
-System.out.println(user.returnLoginStatus(loginUsername, loginPassword));
-}
-input.close();
-}
+        String user = JOptionPane.showInputDialog("Enter username:");
+        String pass = JOptionPane.showInputDialog("Enter password:");
+        JOptionPane.showMessageDialog(null, login.returnLoginStatus(user, pass));
+        if (!login.loginUser(user, pass)) return;
+
+        JOptionPane.showMessageDialog(null, "Welcome to QuickChat.");
+
+        int messageCount = 0;
+        while (true) {
+            String menu = "Choose an option:\n1) Send Messages\n2) Show recently sent messages\n3) Quit";
+            String input = JOptionPane.showInputDialog(menu);
+            if (input == null) break;
+            int choice;
+            try { choice = Integer.parseInt(input); } catch (Exception e) { continue; }
+
+            if (choice == 1) {
+                String numStr = JOptionPane.showInputDialog("How many messages do you want to send?");
+                int num = Integer.parseInt(numStr);
+                for (int i = 0; i < num; i++) {
+                    messageCount++;
+                    String recipient = JOptionPane.showInputDialog("Enter recipient (+27XXXXXXXXX):");
+                    String text = JOptionPane.showInputDialog("Enter message (max 250 chars):");
+
+                    Message msg = new Message(messageCount, recipient, text);
+
+                    if (!msg.checkRecipientCell()) {
+                        JOptionPane.showMessageDialog(null, "Cell phone number incorrectly formatted or does not contain international code.");
+                        messageCount--; continue;
+                    }
+                    if (!msg.checkMessageLength()) {
+                        int excess = text.length() - 250;
+                        JOptionPane.showMessageDialog(null, "Message exceeds 250 characters by " + excess + ", please reduce number and try again.");
+                        messageCount--; continue;
+                    }
+
+                    String options = "1) Send Message\n2) Disregard Message\n3) Store Message to send later";
+                    int sendChoice = Integer.parseInt(JOptionPane.showInputDialog(msg.printMessages() + "\n\n" + options));
+                    String result = msg.sentMessage(sendChoice);
+
+                    if (sendChoice == 1) {
+                        sentMessages.add(msg);
+                        messageHashes.add(msg.getMessageHash());
+                        messageIDs.add(msg.getMessageID());
+                    } else if (sendChoice == 2) {
+                        disregarded.add(msg.getMessageText());
+                    } else if (sendChoice == 3) {
+                        stored.add(msg.getMessageText());
+                    }
+                    JOptionPane.showMessageDialog(null, result);
+                }
+                JOptionPane.showMessageDialog(null, "Total messages sent: " + Message.returnTotalMessages());
+
+            } else if (choice == 2) {
+                JOptionPane.showMessageDialog(null, "Coming Soon.");
+            } else if (choice == 3) {
+                JOptionPane.showMessageDialog(null, "Total messages sent: " + Message.returnTotalMessages() + "\nGoodbye!");
+                break;
+            }
+        }
+    }
 }
